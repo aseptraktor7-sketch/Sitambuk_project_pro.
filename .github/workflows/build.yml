@@ -1,1 +1,36 @@
-
+name: Build APK
+on:
+  push:
+    branches: [ main ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unzip project
+        run: |
+          rm -rf app gradle || true
+          unzip -o *.zip -d .
+          ls -la
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: 8.7
+      - name: Build APK
+        run: |
+          PROJECT_DIR=$(find . -maxdepth 3 -name "settings.gradle*" -exec dirname {} \; | head -n 1)
+          if [ -z "$PROJECT_DIR" ]; then PROJECT_DIR="."; fi
+          cd $PROJECT_DIR
+          if [ -f "./gradlew" ]; then
+            chmod +x gradlew
+            ./gradlew assembleDebug
+          else
+            gradle assembleDebug
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Sitambuk-APK-PRO
+          path: "**/app/build/outputs/apk/debug/*.apk"
